@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - Hamilton Community Toy Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1 id="library-name">Hamilton Community Toy Library</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="catalogue.html">Catalogue</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>Welcome to the Toy Library</h2>
+
+    <p>Welcome to your community toy library! We offer a wide range of toys for children of all ages, available for short-term borrowing.</p>
+
+    <h3 style="margin-top: 30px;">How It Works</h3>
+    <ol style="margin-left: 20px; line-height: 2;">
+      <li><strong>Browse</strong> our <a href="catalogue.html">toy catalogue</a> to see what's available</li>
+      <li><strong>Book</strong> a toy by entering your user ID (no password needed)</li>
+      <li><strong>Pick up</strong> your toy and enjoy it for 14 days</li>
+      <li><strong>Renew</strong> your booking up to 2 times if you need more time</li>
+      <li><strong>Return</strong> your toy when you're done</li>
+    </ol>
+
+    <h3 style="margin-top: 30px;">Quick Links</h3>
+    <ul style="margin-left: 20px; line-height: 2;">
+      <li><a href="catalogue.html">View Available Toys</a></li>
+      <li><a href="my-bookings.html">Manage My Bookings</a></li>
+    </ul>
+
+    <h3 style="margin-top: 30px;">Need Help?</h3>
+    <p>If you don't have a user ID yet, please visit the library in person or contact us at <span id="library-email"></span>.</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('library-name').textContent = LIBRARY_NAME
+      document.getElementById('library-email').textContent = LIBRARY_EMAIL
+    })
+  </script>
+</body>
+</html>

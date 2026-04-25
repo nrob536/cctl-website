@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings - Hamilton Community Toy Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1 id="library-name">Hamilton Community Toy Library</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="catalogue.html">Catalogue</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>My Bookings</h2>
+
+    <div id="lookup-section" class="bookings-lookup">
+      <h3>Enter Your Details</h3>
+      <form id="lookup-form">
+        <div class="form-group">
+          <label for="lookup-user-id">Your User ID (e.g. TL-4829)</label>
+          <input type="text" id="lookup-user-id" name="lookup-user-id" required placeholder="Enter your user ID">
+        </div>
+        <button type="submit" id="lookup-btn">View My Bookings</button>
+      </form>
+      <div id="lookup-message"></div>
+    </div>
+
+    <div id="bookings-section" style="display: none;">
+      <div style="margin-bottom: 20px;">
+        <button id="logout-btn" class="btn-primary">View Different Member</button>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading bookings...</p>
+      </div>
+
+      <div id="no-bookings" class="message message-info" style="display: none;">
+        <p>You have no active bookings. <a href="catalogue.html">Browse toys</a> to make a booking.</p>
+      </div>
+
+      <div id="bookings-list" class="bookings-list"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/my-bookings.js"></script>
+</body>
+</html>

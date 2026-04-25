@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toy Details - Hamilton Community Toy Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1 id="library-name">Hamilton Community Toy Library</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="catalogue.html">Catalogue</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading toy details...</p>
+    </div>
+
+    <div id="toy-not-found" class="message message-error" style="display: none;">
+      <p>Toy not found. <a href="catalogue.html">Back to catalogue</a></p>
+    </div>
+
+    <div id="toy-detail" class="toy-detail" style="display: none;">
+      <img id="toy-image" src="" alt="" class="toy-detail-image" onerror="this.src='images/placeholder.png'">
+      
+      <div class="toy-detail-content">
+        <h1 id="toy-name"></h1>
+
+        <div class="toy-detail-description">
+          <p id="toy-description"></p>
+        </div>
+
+        <div class="toy-detail-info">
+          <div>
+            <strong>Age Range</strong>
+            <span id="toy-age-range"></span>
+          </div>
+          <div>
+            <strong>Category</strong>
+            <span id="toy-category"></span>
+          </div>
+        </div>
+
+        <div id="unavailable-msg" class="message message-error" style="display: none;">
+          <p>This toy is currently unavailable. Please check back later or browse <a href="catalogue.html">other toys</a>.</p>
+        </div>
+
+        <div id="booking-form-container" style="display: none;">
+          <div class="booking-form">
+            <h3>Book This Toy</h3>
+            
+            <div id="form-message"></div>
+
+            <form id="booking-form">
+              <div class="form-group">
+                <label for="user-id">Your User ID (e.g. TL-4829)</label>
+                <input type="text" id="user-id" name="user-id" required placeholder="Enter your user ID">
+              </div>
+
+              <div class="form-group">
+                <label for="pickup-date">Pickup Date</label>
+                <input type="date" id="pickup-date" name="pickup-date" required>
+              </div>
+
+              <button type="submit" id="submit-btn">Book This Toy</button>
+            </form>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+          <a href="catalogue.html">&larr; Back to Catalogue</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/toy.js"></script>
+</body>
+</html>
