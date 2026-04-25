@@ -1,4 +1,4 @@
-# gCommunity Toy Library
+# Community Toy Library
 
 A community-run toy lending library web application. Members can browse a toy catalogue and make bookings using only a user ID. Library staff manage everything through Supabase's built-in table editor. The system sends automated overdue reminder emails daily.
 
