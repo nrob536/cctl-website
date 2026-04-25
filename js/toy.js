@@ -66,7 +66,9 @@ function displayToy(toy) {
 }
 
 async function handleBookingSubmit(toy) {
-  const userId = document.getElementById('user-id').value.trim()
+  const rawUserId = document.getElementById('user-id').value
+  const userIdCandidates = buildUserIdCandidates(rawUserId)
+  const userId = userIdCandidates[0] || ''
   const pickupDate = document.getElementById('pickup-date').value
   const submitBtn = document.getElementById('submit-btn')
   const formMessage = document.getElementById('form-message')
@@ -79,12 +81,12 @@ async function handleBookingSubmit(toy) {
   submitBtn.disabled = true
   submitBtn.textContent = 'Processing...'
 
-  try {
-    // Look up member through RPC (members table is not directly readable by client)
-    const { data: memberRows, error: memberError } = await window.db
-      .rpc('lookup_member', { p_user_id: userId })
+  // Keep the field tidy without forcing case changes.
+  document.getElementById('user-id').value = userId
 
-    const member = memberRows && memberRows.length > 0 ? memberRows[0] : null
+  try {
+    // Look up member through RPC (members table is not directly readable by client).
+    const { member, memberError } = await lookupMemberByCandidates(userIdCandidates)
 
     if (memberError || !member) {
       showFormMessage('User ID not found. Please check and try again.', 'error', formMessage)
@@ -101,16 +103,20 @@ async function handleBookingSubmit(toy) {
       return
     }
 
+    const resolvedUserId = member.user_id || userId
+
     // Create booking through RPC (enforces blocked/max-active/toy-availability server-side)
     const { data: bookingRows, error: bookingError } = await window.db
       .rpc('create_booking', {
-        p_user_id: userId,
+        p_user_id: resolvedUserId,
         p_toy_id: toy.id,
         p_pickup_date: pickupDate
       })
 
     if (bookingError) {
       const code = String(bookingError.message || '')
+      const lowered = code.toLowerCase()
+
       if (code.includes('MAX_ACTIVE_BOOKINGS')) {
         showFormMessage('You have reached the maximum number of active bookings (3). Please return a toy before booking another.', 'error', formMessage)
       } else if (code.includes('MEMBER_BLOCKED')) {
@@ -119,8 +125,16 @@ async function handleBookingSubmit(toy) {
         showFormMessage('Sorry, this toy is no longer available.', 'error', formMessage)
       } else if (code.includes('MEMBER_NOT_FOUND')) {
         showFormMessage('User ID not found. Please check and try again.', 'error', formMessage)
+      } else if (lowered.includes('row-level security') || lowered.includes('permission denied')) {
+        showFormMessage('Booking is blocked by database permissions. Please ask staff to check the create_booking function permissions (SECURITY DEFINER and GRANT EXECUTE).', 'error', formMessage)
+      } else if (
+        (lowered.includes('function') && lowered.includes('create_booking') && lowered.includes('does not exist')) ||
+        (lowered.includes('could not find the function') && lowered.includes('create_booking') && lowered.includes('schema cache'))
+      ) {
+        showFormMessage('Booking service is not configured in Supabase yet. Please ask staff to create the create_booking database function.', 'error', formMessage)
       } else {
-        throw bookingError
+        const detail = sanitizeErrorMessage(code)
+        showFormMessage(`Booking failed: ${detail}`, 'error', formMessage)
       }
 
       submitBtn.disabled = false
@@ -128,7 +142,8 @@ async function handleBookingSubmit(toy) {
       return
     }
 
-    const dueDateString = bookingRows && bookingRows[0] ? bookingRows[0].due_date : null
+    const booking = toSingleRow(bookingRows)
+    const dueDateString = booking ? booking.due_date : null
 
     // Show success message
     showFormMessage(`Booking successful! Please pick up ${toy.name} by ${formatDate(dueDateString)}.`, 'success', formMessage)
@@ -145,7 +160,8 @@ async function handleBookingSubmit(toy) {
 
   } catch (err) {
     console.error('Error creating booking:', err)
-    showFormMessage('Error booking toy. Please try again.', 'error', formMessage)
+    const detail = sanitizeErrorMessage(err && err.message ? err.message : '')
+    showFormMessage(`Error booking toy. ${detail}`, 'error', formMessage)
     submitBtn.disabled = false
     submitBtn.textContent = 'Book This Toy'
   }
@@ -168,4 +184,53 @@ function formatDate(dateString) {
   }
   const date = new Date(dateString)
   return date.toLocaleDateString('en-NZ', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+function toSingleRow(data) {
+  if (!data) return null
+  if (Array.isArray(data)) return data.length > 0 ? data[0] : null
+  if (typeof data === 'object') return data
+  return null
+}
+
+function normalizeUserId(userId) {
+  return String(userId || '').trim()
+}
+
+function buildUserIdCandidates(userId) {
+  const base = normalizeUserId(userId)
+  if (!base) return []
+
+  const variants = [base, base.toUpperCase(), base.toLowerCase()]
+  return [...new Set(variants)]
+}
+
+async function lookupMemberByCandidates(candidates) {
+  let lastError = null
+
+  for (const candidate of candidates) {
+    const { data, error } = await window.db.rpc('lookup_member', { p_user_id: candidate })
+    const member = toSingleRow(data)
+
+    if (member) {
+      return { member, memberError: null }
+    }
+
+    if (error) {
+      lastError = error
+    }
+  }
+
+  return { member: null, memberError: lastError }
+}
+
+function sanitizeErrorMessage(message) {
+  const fallback = 'Please try again, or contact staff if this continues.'
+  if (!message) return fallback
+
+  const trimmed = String(message).replace(/\s+/g, ' ').trim()
+  if (!trimmed) return fallback
+
+  // Keep frontend errors readable and avoid dumping long SQL traces to users.
+  return trimmed.length > 180 ? `${trimmed.slice(0, 177)}...` : trimmed
 }

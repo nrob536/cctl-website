@@ -16,10 +16,10 @@
     </nav>
   </header>
 
-  <div class="container">
+  <div class="container" x-data="catalogue()" x-init="init()">
     <h2>Browse Toys</h2>
 
-    <div class="filters" x-data="{ selectedCategory: '' }">
+    <div class="filters">
       <label for="category-filter">Filter by Category:</label>
       <select id="category-filter" @change="selectedCategory = $el.value" x-model="selectedCategory">
         <option value="">All Categories</option>

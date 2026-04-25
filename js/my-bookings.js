@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 async function handleLookup() {
-  const userId = document.getElementById('lookup-user-id').value.trim()
+  const rawUserId = document.getElementById('lookup-user-id').value
+  const userIdCandidates = buildUserIdCandidates(rawUserId)
+  const userId = userIdCandidates[0] || ''
   const lookupBtn = document.getElementById('lookup-btn')
   const lookupMessage = document.getElementById('lookup-message')
 
@@ -36,12 +38,12 @@ async function handleLookup() {
   lookupBtn.textContent = 'Loading...'
   lookupMessage.innerHTML = ''
 
-  try {
-    // Look up member through RPC (members table is not directly readable by client)
-    const { data: memberRows, error: memberError } = await window.db
-      .rpc('lookup_member', { p_user_id: userId })
+  // Keep the field tidy without forcing case changes.
+  document.getElementById('lookup-user-id').value = userId
 
-    const member = memberRows && memberRows.length > 0 ? memberRows[0] : null
+  try {
+    // Look up member through RPC (members table is not directly readable by client).
+    const { member, memberError } = await lookupMemberByCandidates(userIdCandidates)
 
     if (memberError || !member) {
       lookupMessage.innerHTML = '<div class="message message-error">User ID not found. Please check and try again.</div>'
@@ -58,11 +60,12 @@ async function handleLookup() {
     }
 
     // Store user ID and show bookings
-    currentUserId = userId
+    const resolvedUserId = member.user_id || userId
+    currentUserId = resolvedUserId
     document.getElementById('lookup-section').style.display = 'none'
     document.getElementById('bookings-section').style.display = 'block'
 
-    await fetchBookings(userId)
+    await fetchBookings(resolvedUserId)
 
     lookupBtn.disabled = false
     lookupBtn.textContent = 'View My Bookings'
@@ -212,4 +215,42 @@ function formatDate(dateString) {
   }
   const date = new Date(dateString)
   return date.toLocaleDateString('en-NZ', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+function toSingleRow(data) {
+  if (!data) return null
+  if (Array.isArray(data)) return data.length > 0 ? data[0] : null
+  if (typeof data === 'object') return data
+  return null
+}
+
+function normalizeUserId(userId) {
+  return String(userId || '').trim()
+}
+
+function buildUserIdCandidates(userId) {
+  const base = normalizeUserId(userId)
+  if (!base) return []
+
+  const variants = [base, base.toUpperCase(), base.toLowerCase()]
+  return [...new Set(variants)]
+}
+
+async function lookupMemberByCandidates(candidates) {
+  let lastError = null
+
+  for (const candidate of candidates) {
+    const { data, error } = await window.db.rpc('lookup_member', { p_user_id: candidate })
+    const member = toSingleRow(data)
+
+    if (member) {
+      return { member, memberError: null }
+    }
+
+    if (error) {
+      lastError = error
+    }
+  }
+
+  return { member: null, memberError: lastError }
 }
