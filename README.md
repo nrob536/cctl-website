@@ -1,4 +1,4 @@
-# Community Toy Library
+# gCommunity Toy Library
 
 A community-run toy lending library web application. Members can browse a toy catalogue and make bookings using only a user ID. Library staff manage everything through Supabase's built-in table editor. The system sends automated overdue reminder emails daily.
 
@@ -239,8 +239,22 @@ A Supabase Edge Function (`supabase/functions/send-reminders/index.ts`) runs on 
 ### Deploying the Edge Function
 
 ```bash
-# Install the Supabase CLI
-npm install -g supabase
+# Install the Supabase CLI (Linux — choose one method)
+# Option A: Homebrew
+brew install supabase/tap/supabase
+
+# Option B: direct binary download (no package manager required)
+# Replace X.Y.Z with the latest version from https://github.com/supabase/cli/releases
+wget https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz
+tar -xzf supabase_linux_amd64.tar.gz
+sudo mv supabase /usr/local/bin/
+
+# macOS
+brew install supabase/tap/supabase
+
+# Windows (Scoop)
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
 
 # Log in and link to your project
 supabase login

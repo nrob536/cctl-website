@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toy Catalogue - Carterton Community Toy Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1 id="library-name">Carterton Community Toy Library</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="catalogue.html">Catalogue</a>
+      <a href="my-bookings.html">My Bookings</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>Browse Toys</h2>
+
+    <div class="filters" x-data="{ selectedCategory: '' }">
+      <label for="category-filter">Filter by Category:</label>
+      <select id="category-filter" @change="selectedCategory = $el.value" x-model="selectedCategory">
+        <option value="">All Categories</option>
+        <template x-for="category in categories" :key="category">
+          <option :value="category" x-text="category"></option>
+        </template>
+      </select>
+    </div>
+
+    <div class="loading" x-show="loading">
+      <div class="spinner"></div>
+      <p>Loading toys...</p>
+    </div>
+
+    <div class="toys-grid" x-show="!loading && filteredToys.length > 0">
+      <template x-for="toy in filteredToys" :key="toy.id">
+        <div class="toy-card">
+          <img :src="toy.image_url" :alt="toy.name" onerror="this.src='images/placeholder.png'">
+          <div class="toy-card-content">
+            <h3 x-text="toy.name"></h3>
+            <div class="toy-card-meta">
+              <strong>Age Range:</strong> <span x-text="toy.age_range"></span>
+            </div>
+            <span class="toy-card-category" x-text="toy.category"></span>
+            <br>
+            <span class="badge-available" x-show="toy.available">Available</span>
+            <span class="badge-unavailable" x-show="!toy.available">Currently Unavailable</span>
+            <br>
+            <a class="toy-card-link" :href="'toy.html?id=' + toy.id">View Details</a>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <div x-show="!loading && filteredToys.length === 0" class="message message-info">
+      <p>No toys found in this category. Please try another.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/catalogue.js"></script>
+</body>
+</html>
