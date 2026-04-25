@@ -207,6 +207,224 @@ create policy "Members can view their own bookings"
 
 create policy "Members can insert their own bookings"
   on bookings for insert with check (member_id = auth.uid());
+
+-- Required RPC functions used by the frontend
+-- 1) Lookup a member by user_id
+create or replace function public.lookup_member(p_user_id text)
+returns table (
+  id uuid,
+  user_id text,
+  name text,
+  email text,
+  phone text,
+  is_blocked boolean,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select m.id, m.user_id, m.name, m.email, m.phone, m.is_blocked, m.created_at
+  from public.members m
+  where upper(trim(m.user_id)) = upper(trim(p_user_id))
+  limit 1;
+$$;
+
+-- 2) Create a booking (enforces rules server-side)
+create or replace function public.create_booking(
+  p_user_id text,
+  p_toy_id uuid,
+  p_pickup_date date
+)
+returns table (
+  booking_id uuid,
+  due_date timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_member_id uuid;
+  v_is_blocked boolean;
+  v_active_count int;
+  v_available boolean;
+  v_booking_id uuid;
+  v_due_date timestamptz;
+begin
+  select m.id, m.is_blocked
+  into v_member_id, v_is_blocked
+  from public.members m
+  where upper(trim(m.user_id)) = upper(trim(p_user_id))
+  limit 1;
+
+  if v_member_id is null then
+    raise exception 'MEMBER_NOT_FOUND';
+  end if;
+
+  if v_is_blocked then
+    raise exception 'MEMBER_BLOCKED';
+  end if;
+
+  select count(*)
+  into v_active_count
+  from public.bookings b
+  where b.member_id = v_member_id
+    and b.returned_at is null;
+
+  if v_active_count >= 3 then
+    raise exception 'MAX_ACTIVE_BOOKINGS';
+  end if;
+
+  select t.available
+  into v_available
+  from public.toys t
+  where t.id = p_toy_id;
+
+  if v_available is null or v_available = false then
+    raise exception 'TOY_UNAVAILABLE';
+  end if;
+
+  v_due_date := (p_pickup_date::timestamptz + interval '14 days');
+
+  insert into public.bookings (member_id, toy_id, due_date)
+  values (v_member_id, p_toy_id, v_due_date)
+  returning id into v_booking_id;
+
+  update public.toys
+  set available = false
+  where id = p_toy_id;
+
+  return query
+  select v_booking_id, v_due_date;
+end;
+$$;
+
+-- 3) List active bookings for a user
+create or replace function public.list_active_bookings(p_user_id text)
+returns table (
+  booking_id uuid,
+  toy_id uuid,
+  toy_name text,
+  toy_category text,
+  due_date timestamptz,
+  renewal_count int
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    b.id as booking_id,
+    t.id as toy_id,
+    t.name as toy_name,
+    t.category as toy_category,
+    b.due_date,
+    b.renewal_count
+  from public.bookings b
+  join public.members m on m.id = b.member_id
+  join public.toys t on t.id = b.toy_id
+  where upper(trim(m.user_id)) = upper(trim(p_user_id))
+    and b.returned_at is null
+  order by b.due_date asc;
+$$;
+
+-- 4) Renew a booking
+create or replace function public.renew_booking(
+  p_user_id text,
+  p_booking_id uuid
+)
+returns table (
+  booking_id uuid,
+  due_date timestamptz,
+  renewal_count int
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_member_id uuid;
+  v_new_due_date timestamptz;
+  v_new_renewal_count int;
+begin
+  select m.id
+  into v_member_id
+  from public.members m
+  where upper(trim(m.user_id)) = upper(trim(p_user_id))
+  limit 1;
+
+  if v_member_id is null then
+    raise exception 'MEMBER_NOT_FOUND';
+  end if;
+
+  update public.bookings b
+  set
+    due_date = b.due_date + interval '14 days',
+    renewal_count = b.renewal_count + 1
+  where b.id = p_booking_id
+    and b.member_id = v_member_id
+    and b.returned_at is null
+    and b.renewal_count < 2
+  returning b.due_date, b.renewal_count
+  into v_new_due_date, v_new_renewal_count;
+
+  if v_new_due_date is null then
+    raise exception 'MAX_RENEWALS_REACHED';
+  end if;
+
+  return query
+  select p_booking_id, v_new_due_date, v_new_renewal_count;
+end;
+$$;
+
+-- 5) Return a booking
+create or replace function public.return_booking(
+  p_user_id text,
+  p_booking_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_member_id uuid;
+  v_toy_id uuid;
+begin
+  select m.id
+  into v_member_id
+  from public.members m
+  where upper(trim(m.user_id)) = upper(trim(p_user_id))
+  limit 1;
+
+  if v_member_id is null then
+    raise exception 'MEMBER_NOT_FOUND';
+  end if;
+
+  update public.bookings b
+  set returned_at = now()
+  where b.id = p_booking_id
+    and b.member_id = v_member_id
+    and b.returned_at is null
+  returning b.toy_id into v_toy_id;
+
+  if v_toy_id is not null then
+    update public.toys
+    set available = true
+    where id = v_toy_id;
+  end if;
+end;
+$$;
+
+grant execute on function public.lookup_member(text) to anon, authenticated;
+grant execute on function public.create_booking(text, uuid, date) to anon, authenticated;
+grant execute on function public.list_active_bookings(text) to anon, authenticated;
+grant execute on function public.renew_booking(text, uuid) to anon, authenticated;
+grant execute on function public.return_booking(text, uuid) to anon, authenticated;
+
+-- Optional: force PostgREST schema cache refresh immediately
+notify pgrst, 'reload schema';
 ```
 
 ---
