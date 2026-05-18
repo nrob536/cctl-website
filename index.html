@@ -3,42 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - Hamilton Community Toy Library</title>
+  <title>Home - Carterton Community Toy Library</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <header>
-    <h1 id="library-name">Hamilton Community Toy Library</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="catalogue.html">Catalogue</a>
-      <a href="my-bookings.html">My Bookings</a>
-    </nav>
+<body class="home-page">
+
+  <!-- Decorative SVG background layer -->
+  <div class="home-bg-deco" aria-hidden="true">
+    <svg class="deco-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <!-- rolling hills / NZ landscape silhouette -->
+      <ellipse cx="200" cy="820" rx="340" ry="120" fill="#52b788" opacity="0.18"/>
+      <ellipse cx="900" cy="860" rx="500" ry="140" fill="#2d6a4f" opacity="0.13"/>
+      <ellipse cx="1350" cy="840" rx="280" ry="100" fill="#52b788" opacity="0.16"/>
+      <!-- playful floating shapes -->
+      <circle cx="120" cy="160" r="54" fill="#f9c74f" opacity="0.22"/>
+      <circle cx="1340" cy="220" r="38" fill="#f8961e" opacity="0.2"/>
+      <circle cx="700" cy="80" r="28" fill="#9b5de5" opacity="0.18"/>
+      <circle cx="1100" cy="500" r="70" fill="#48cae4" opacity="0.13"/>
+      <circle cx="50"  cy="600" r="46" fill="#f3722c" opacity="0.12"/>
+      <!-- star / sparkle shapes -->
+      <polygon points="1200,120 1207,140 1228,140 1212,152 1218,172 1200,161 1182,172 1188,152 1172,140 1193,140" fill="#f9c74f" opacity="0.35"/>
+      <polygon points="300,300 305,314 320,314 308,323 313,337 300,329 287,337 292,323 280,314 295,314" fill="#9b5de5" opacity="0.3"/>
+      <polygon points="820,700 824,711 836,711 827,718 830,730 820,723 810,730 813,718 804,711 816,711" fill="#f8961e" opacity="0.32"/>
+      <!-- small dots / confetti -->
+      <circle cx="460" cy="340" r="7" fill="#48cae4" opacity="0.4"/>
+      <circle cx="980" cy="200" r="5" fill="#f3722c" opacity="0.4"/>
+      <circle cx="1260" cy="620" r="9" fill="#52b788" opacity="0.35"/>
+      <circle cx="160" cy="430" r="6" fill="#f9c74f" opacity="0.45"/>
+      <circle cx="640" cy="780" r="8" fill="#9b5de5" opacity="0.3"/>
+      <!-- kiwi bird silhouette (simple) -->
+      <ellipse cx="1390" cy="710" rx="32" ry="22" fill="#2d6a4f" opacity="0.2"/>
+      <ellipse cx="1415" cy="706" rx="10" ry="8" fill="#2d6a4f" opacity="0.2"/>
+      <line x1="1424" y1="706" x2="1440" y2="710" stroke="#2d6a4f" stroke-width="3" opacity="0.2"/>
+    </svg>
+  </div>
+
+  <header class="home-header">
+    <div class="home-header-inner">
+      <h1 id="library-name">Carterton Community Toy Library</h1>
+      <nav>
+        <a href="index.html" class="nav-active">Home</a>
+        <a href="catalogue.html">Catalogue</a>
+        <a href="my-bookings.html">My Bookings</a>
+      </nav>
+    </div>
   </header>
 
-  <div class="container">
-    <h2>Welcome to the Toy Library</h2>
+  <!-- Hero -->
+  <section class="home-hero">
+    <div class="home-hero-inner">
+      <div class="home-hero-text">
+        <p class="home-tagline">Ko te tākaro ko te ara</p>
+        <h2>Play is the way <span class="tagline-sparkle">✨</span></h2>
+        <p class="home-subtitle">Your community toy library in Carterton, Wairarapa — borrow, play, learn, return.</p>
+        <div class="home-hero-cta">
+          <a href="catalogue.html" class="btn-hero-primary">Browse Toys</a>
+          <a href="my-bookings.html" class="btn-hero-secondary">My Bookings</a>
+        </div>
+      </div>
+      <div class="home-hero-logo">
+        <img src="/images/cctl-logo.png" alt="Carterton Community Toy Library Logo">
+      </div>
+    </div>
+  </section>
 
-    <p>Welcome to your community toy library! We offer a wide range of toys for children of all ages, available for short-term borrowing.</p>
+  <!-- How It Works -->
+  <section class="home-section">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-icon" style="background:#fff0b3;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f9c74f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
+          </div>
+          <div class="step-num">1</div>
+          <h3>Browse</h3>
+          <p>Explore our <a href="catalogue.html">toy catalogue</a> to find what sparks your child's imagination.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon" style="background:#d0f0fd;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#48cae4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="step-num">2</div>
+          <h3>Book</h3>
+          <p>Reserve a toy with just your user ID — no password needed.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon" style="background:#d8f3dc;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#52b788" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="step-num">3</div>
+          <h3>Pick Up</h3>
+          <p>Collect your toy and enjoy it for up to <strong>14 days</strong>.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon" style="background:#ede7f6;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#9b5de5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+          </div>
+          <div class="step-num">4</div>
+          <h3>Renew</h3>
+          <p>Need more time? Renew your booking up to <strong>2 times</strong>.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon" style="background:#ffe0cc;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f8961e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="step-num">5</div>
+          <h3>Return</h3>
+          <p>Bring the toy back and share the joy with another family.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <h3 style="margin-top: 30px;">How It Works</h3>
-    <ol style="margin-left: 20px; line-height: 2;">
-      <li><strong>Browse</strong> our <a href="catalogue.html">toy catalogue</a> to see what's available</li>
-      <li><strong>Book</strong> a toy by entering your user ID (no password needed)</li>
-      <li><strong>Pick up</strong> your toy and enjoy it for 14 days</li>
-      <li><strong>Renew</strong> your booking up to 2 times if you need more time</li>
-      <li><strong>Return</strong> your toy when you're done</li>
-    </ol>
+  <!-- Values strip -->
+  <section class="home-values">
+    <div class="container home-values-inner">
+      <div class="value-pill">🌿 Wairarapa Community</div>
+      <div class="value-pill">🧩 Learning Through Play</div>
+      <div class="value-pill">♻️ Sustainable Sharing</div>
+      <div class="value-pill">👨‍👩‍👧 Whānau Friendly</div>
+      <div class="value-pill">🎉 All Ages Welcome</div>
+    </div>
+  </section>
 
-    <h3 style="margin-top: 30px;">Quick Links</h3>
-    <ul style="margin-left: 20px; line-height: 2;">
-      <li><a href="catalogue.html">View Available Toys</a></li>
-      <li><a href="my-bookings.html">Manage My Bookings</a></li>
-    </ul>
-
-    <h3 style="margin-top: 30px;">Need Help?</h3>
-    <p>If you don't have a user ID yet, please visit the library in person or contact us at <span id="library-email"></span>.</p>
-  </div>
+  <!-- Need Help -->
+  <section class="home-section home-help">
+    <div class="container">
+      <h2 class="section-title">Need Help?</h2>
+      <p>If you don't have a user ID yet, visit us in person or get in touch at <strong><span id="library-email"></span></strong>.</p>
+    </div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
