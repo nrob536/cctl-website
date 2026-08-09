@@ -76,6 +76,36 @@ def main():
     for c in master.select_dtypes(include=[object]).columns:
         master[c] = master[c].apply(lambda v: v.strip() if isinstance(v, str) else v)
 
+    # Create a UniqueID column to satisfy databases that require a unique primary key.
+    # For rows with an `ID` value, append a lower-case letter suffix per occurrence
+    # (a, b, c, ...) to keep the original ID visible while making each row unique.
+    # For rows missing `ID`, create `UniqueID` from the dataframe index.
+    def _letter_for(n: int) -> str:
+        # 0 -> a, 1 -> b, ... 25 -> z, 26 -> aa, etc.
+        s = ""
+        n_orig = n
+        while n >= 0:
+            s = chr(ord("a") + (n % 26)) + s
+            n = n // 26 - 1
+        return s
+
+    if "ID" in master.columns:
+        # ensure ID is treated as string for concatenation
+        master["ID"] = master["ID"].astype(str)
+        counts = master.groupby("ID").cumcount()
+        master["_occurrence"] = counts
+        # If occurrence is 0, keep original ID; otherwise append letter suffix
+        def make_uid(r):
+            occ = int(r["_occurrence"])
+            if occ == 0:
+                return r["ID"]
+            return f"{r['ID']}{_letter_for(occ)}"
+
+        master["UniqueID"] = master.apply(make_uid, axis=1)
+        master.drop(columns=["_occurrence"], inplace=True)
+    else:
+        master["UniqueID"] = [f"ROW{idx+1}" for idx in master.index]
+
     # Dedupe
     if args.dedupe != "none" and "ID" in master.columns:
         keep = "first" if args.dedupe == "keep_first" else "last"
