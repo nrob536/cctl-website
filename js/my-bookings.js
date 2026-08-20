@@ -88,8 +88,14 @@ async function fetchBookings(userId) {
     bookingsList.innerHTML = ''
 
     // Fetch active bookings with toy details through RPC
-    const { data: bookings, error } = await window.db
-      .rpc('list_active_bookings', { p_user_id: userId })
+    let { data: bookings, error } = await window.db
+      .rpc('list_active_bookings_v2', { p_user_id: userId })
+
+    if (isMissingFunctionError(error)) {
+      const fallbackResult = await window.db.rpc('list_active_bookings', { p_user_id: userId })
+      bookings = fallbackResult.data
+      error = fallbackResult.error
+    }
 
     if (error) throw error
 
@@ -108,7 +114,8 @@ async function fetchBookings(userId) {
       const toy = {
         id: booking.toy_id,
         name: booking.toy_name,
-        category: booking.toy_category
+        category: booking.toy_category,
+        publicId: booking.toy_public_id
       }
 
       return `
@@ -118,6 +125,10 @@ async function fetchBookings(userId) {
             <div>
               <strong>Category</strong>
               ${toy.category}
+            </div>
+            <div>
+              <strong>Toy ID</strong>
+              ${toy.publicId || 'N/A'}
             </div>
             <div>
               <strong>Due Date</strong>
@@ -162,11 +173,20 @@ async function renewBooking(bookingId, currentRenewalCount) {
   if (!confirmed) return
 
   try {
-    const { data: rows, error: renewError } = await window.db
-      .rpc('renew_booking', {
+    let { data: rows, error: renewError } = await window.db
+      .rpc('renew_booking_v2', {
         p_user_id: currentUserId,
         p_booking_id: bookingId
       })
+
+    if (isMissingFunctionError(renewError)) {
+      const fallbackResult = await window.db.rpc('renew_booking', {
+        p_user_id: currentUserId,
+        p_booking_id: bookingId
+      })
+      rows = fallbackResult.data
+      renewError = fallbackResult.error
+    }
 
     if (renewError) {
       const code = String(renewError.message || '')
@@ -192,11 +212,19 @@ async function returnToy(bookingId) {
   if (!confirmed) return
 
   try {
-    const { error: returnError } = await window.db
-      .rpc('return_booking', {
+    let { error: returnError } = await window.db
+      .rpc('return_booking_v2', {
         p_user_id: currentUserId,
         p_booking_id: bookingId
       })
+
+    if (isMissingFunctionError(returnError)) {
+      const fallbackResult = await window.db.rpc('return_booking', {
+        p_user_id: currentUserId,
+        p_booking_id: bookingId
+      })
+      returnError = fallbackResult.error
+    }
 
     if (returnError) throw returnError
 
@@ -253,4 +281,13 @@ async function lookupMemberByCandidates(candidates) {
   }
 
   return { member: null, memberError: lastError }
+}
+
+function isMissingFunctionError(error) {
+  if (!error) return false
+  const message = String(error.message || '').toLowerCase()
+  return (
+    (message.includes('function') && message.includes('does not exist')) ||
+    (message.includes('could not find the function') && message.includes('schema cache'))
+  )
 }

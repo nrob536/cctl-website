@@ -70,10 +70,20 @@ header a {
   font-weight: 600;
 }
 
+.filter-sub-label {
+  margin-top: 14px;
+}
+
 .filters select {
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
+}
+
+.results-count {
+  margin-top: 10px;
+  color: #666;
   font-size: 14px;
 }
 
@@ -215,6 +225,10 @@ header a {
 
 .toy-detail-description p {
   margin-bottom: 10px;
+}
+
+.back-link-row {
+  margin-top: 30px;
 }
 
 /* Booking form */

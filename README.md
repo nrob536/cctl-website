@@ -101,6 +101,15 @@ cd toy-library
 
 No `npm install` needed. Open any `.html` file directly in your browser to preview it, or use a simple local server:
 
+```text
+Fastest option in VS Code (recommended)
+1. Install extension: Ritwick Dey - Live Server
+2. Right-click index.html (or catalogue.html) and choose "Open with Live Server"
+3. Your browser opens automatically and reloads on every save
+```
+
+If you prefer terminal-only local serving:
+
 ```bash
 # Python (available by default on most computers)
 python3 -m http.server 8080
@@ -110,7 +119,9 @@ python3 -m http.server 8080
 ### 2. Set up Supabase
 
 1. Create a new project at [supabase.com](https://supabase.com).
-2. Go to **SQL Editor** and run the schema from the [Database schema](#database-schema) section below.
+2. Go to **SQL Editor** and run migrations in order:
+  - `migrations/001_create_toy_library_schema.sql`
+  - `migrations/002_bookings_v2_and_catalogue_perf.sql`
 3. Enable **anonymous sign-ins** under Authentication → Settings → Auth providers.
 4. Copy your project URL and anon key from Settings → API.
 
