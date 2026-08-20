@@ -20,13 +20,26 @@
     <h2>Browse Toys</h2>
 
     <div class="filters">
-      <label for="category-filter">Filter by Category:</label>
-      <select id="category-filter" @change="selectedCategory = $el.value" x-model="selectedCategory">
-        <option value="">All Categories</option>
-        <template x-for="category in categories" :key="category">
-          <option :value="category" x-text="category"></option>
-        </template>
-      </select>
+      <div class="filter-group">
+        <label for="display-limit-filter">Toys to display:</label>
+        <select id="display-limit-filter" x-model.number="displayLimit" @change="onDisplayLimitChange()">
+          <template x-for="size in displayLimitOptions" :key="size">
+            <option :value="size" x-text="size"></option>
+          </template>
+        </select>
+      </div>
+    </div>
+
+    <div class="catalogue-status" x-show="!loading && toys.length > 0">
+      <p>Showing <span x-text="toys.length"></span> available toys in a balanced sample across categories.</p>
+    </div>
+
+    <div class="message message-info" x-show="warningMessage">
+      <p x-text="warningMessage"></p>
+    </div>
+
+    <div class="message message-error" x-show="errorMessage">
+      <p x-text="errorMessage"></p>
     </div>
 
     <div class="loading" x-show="loading">
@@ -34,19 +47,18 @@
       <p>Loading toys...</p>
     </div>
 
-    <div class="toys-grid" x-show="!loading && filteredToys.length > 0">
-      <template x-for="toy in filteredToys" :key="toy.id">
+    <div class="toys-grid" x-show="!loading && toys.length > 0">
+      <template x-for="toy in toys" :key="toy.id">
         <div class="toy-card">
-          <img :src="toy.image_url" :alt="toy.name" onerror="this.src='images/placeholder.png'">
+          <img src="images/placeholder.png" alt="Toy image" :src="toy.image_url || 'images/placeholder.png'" :alt="toy.name || 'Toy name'" onerror="this.src='images/placeholder.png'">
           <div class="toy-card-content">
-            <h3 x-text="toy.name"></h3>
+            <h3 x-text="toy.name">Toy name</h3>
             <div class="toy-card-meta">
               <strong>Age Range:</strong> <span x-text="toy.age_range"></span>
             </div>
-            <span class="toy-card-category" x-text="toy.category"></span>
+            <span class="toy-card-category" x-text="toy.category || 'Uncategorised'"></span>
             <br>
             <span class="badge-available" x-show="toy.available">Available</span>
-            <span class="badge-unavailable" x-show="!toy.available">Currently Unavailable</span>
             <br>
             <a class="toy-card-link" :href="'toy.html?id=' + toy.id">View Details</a>
           </div>
@@ -54,8 +66,8 @@
       </template>
     </div>
 
-    <div x-show="!loading && filteredToys.length === 0" class="message message-info">
-      <p>No toys found in this category. Please try another.</p>
+    <div x-show="!loading && toys.length === 0 && !warningMessage && !errorMessage" class="message message-info">
+      <p>No toys are available to display right now. Please try again later.</p>
     </div>
   </div>
 
