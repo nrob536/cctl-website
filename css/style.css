@@ -61,16 +61,7 @@ header a {
 
 /* Catalogue */
 .filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
   margin-bottom: 30px;
-}
-
-.filter-group {
-  min-width: 220px;
-  flex: 1;
 }
 
 .filters label {
@@ -80,17 +71,9 @@ header a {
 }
 
 .filters select {
-  width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
-}
-
-.catalogue-status {
-  margin-top: -10px;
-  margin-bottom: 20px;
-  color: #555;
   font-size: 14px;
 }
 
@@ -453,15 +436,6 @@ header a {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-group {
-    min-width: 0;
-  }
-
   .toy-detail-info {
     grid-template-columns: 1fr;
   }
