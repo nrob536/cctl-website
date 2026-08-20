@@ -20,13 +20,27 @@
     <h2>Browse Toys</h2>
 
     <div class="filters">
-      <label for="category-filter">Filter by Category:</label>
-      <select id="category-filter" @change="selectedCategory = $el.value" x-model="selectedCategory">
-        <option value="">All Categories</option>
+      <label for="category-filter">Category:</label>
+      <select id="category-filter" @change="onCategoryChange()" x-model="selectedCategory">
         <template x-for="category in categories" :key="category">
           <option :value="category" x-text="category"></option>
         </template>
       </select>
+
+      <label for="display-size" class="filter-sub-label">Number of Toys to Show:</label>
+      <select
+        id="display-size"
+        x-model.number="displaySize"
+        @change="onDisplaySizeChange()"
+      >
+        <template x-for="size in displayOptions" :key="size">
+          <option :value="size" x-text="size"></option>
+        </template>
+      </select>
+
+      <p class="results-count" x-show="!loading">
+        Showing <strong x-text="loadedCount"></strong> toys in <strong x-text="selectedCategory"></strong>.
+      </p>
     </div>
 
     <div class="loading" x-show="loading">
@@ -37,11 +51,14 @@
     <div class="toys-grid" x-show="!loading && filteredToys.length > 0">
       <template x-for="toy in filteredToys" :key="toy.id">
         <div class="toy-card">
-          <img :src="toy.image_url" :alt="toy.name" onerror="this.src='images/placeholder.png'">
+          <img src="images/placeholder.png" alt="Toy image" :src="toy.image_url" :alt="toy.name" loading="lazy" onerror="this.src='images/placeholder.png'">
           <div class="toy-card-content">
-            <h3 x-text="toy.name"></h3>
+            <h3 x-text="toy.name">Toy</h3>
             <div class="toy-card-meta">
               <strong>Age Range:</strong> <span x-text="toy.age_range"></span>
+            </div>
+            <div class="toy-card-meta">
+              <strong>Toy ID:</strong> <span x-text="toy.toy_public_id || 'N/A'"></span>
             </div>
             <span class="toy-card-category" x-text="toy.category"></span>
             <br>

@@ -50,6 +50,7 @@ function displayToy(toy) {
   document.getElementById('toy-description').textContent = toy.description || 'No description available.'
   document.getElementById('toy-age-range').textContent = toy.age_range || 'Not specified'
   document.getElementById('toy-category').textContent = toy.category || 'Uncategorized'
+  document.getElementById('toy-public-id').textContent = getToyPublicId(toy) || 'N/A'
   
   const img = document.getElementById('toy-image')
   img.src = toy.image_url || 'images/placeholder.png'
@@ -105,13 +106,28 @@ async function handleBookingSubmit(toy) {
 
     const resolvedUserId = member.user_id || userId
 
-    // Create booking through RPC (enforces blocked/max-active/toy-availability server-side)
-    const { data: bookingRows, error: bookingError } = await window.db
-      .rpc('create_booking', {
-        p_user_id: resolvedUserId,
-        p_toy_id: toy.id,
-        p_pickup_date: pickupDate
-      })
+    // Resolve canonical toy ID then create booking through RPC.
+    const { toyId, resolutionError } = await resolveBookingToyId(toy)
+
+    if (resolutionError || !toyId) {
+      showFormMessage('We could not match this toy to a bookable record. Please refresh the catalogue and try again.', 'error', formMessage)
+      submitBtn.disabled = false
+      submitBtn.textContent = 'Book This Toy'
+      return
+    }
+
+    let { data: bookingRows, error: bookingError } = await createBooking(resolvedUserId, toyId, pickupDate)
+
+    // If identifiers are out-of-sync, retry once after resolving by toy attributes.
+    const needsRetry = isToyForeignKeyError(bookingError)
+    if (needsRetry) {
+      const { toyId: retryToyId } = await resolveBookingToyId(toy, { forceLookup: true })
+      if (retryToyId && retryToyId !== toyId) {
+        const retryResult = await createBooking(resolvedUserId, retryToyId, pickupDate)
+        bookingRows = retryResult.data
+        bookingError = retryResult.error
+      }
+    }
 
     if (bookingError) {
       const code = String(bookingError.message || '')
@@ -123,6 +139,12 @@ async function handleBookingSubmit(toy) {
         showFormMessage('Your account is blocked. Please contact the library staff.', 'error', formMessage)
       } else if (code.includes('TOY_UNAVAILABLE')) {
         showFormMessage('Sorry, this toy is no longer available.', 'error', formMessage)
+      } else if (
+        code.includes('TOY_NOT_FOUND') ||
+        lowered.includes('bookings_toy_id_fkey') ||
+        (lowered.includes('foreign key') && lowered.includes('toy_id'))
+      ) {
+        showFormMessage('This toy could not be matched to a valid booking record. Please refresh the catalogue and try again. If it still fails, ask staff to check toy IDs in Supabase.', 'error', formMessage)
       } else if (code.includes('MEMBER_NOT_FOUND')) {
         showFormMessage('User ID not found. Please check and try again.', 'error', formMessage)
       } else if (lowered.includes('row-level security') || lowered.includes('permission denied')) {
@@ -233,4 +255,113 @@ function sanitizeErrorMessage(message) {
 
   // Keep frontend errors readable and avoid dumping long SQL traces to users.
   return trimmed.length > 180 ? `${trimmed.slice(0, 177)}...` : trimmed
+}
+
+function isUuid(value) {
+  const text = String(value || '').trim()
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text)
+}
+
+function pickUuidFromToyObject(toy) {
+  if (!toy || typeof toy !== 'object') return ''
+
+  const directCandidates = [toy.id, toy.toy_id, toy.toy_uuid, toy.uuid]
+  for (const candidate of directCandidates) {
+    if (isUuid(candidate)) return String(candidate).trim()
+  }
+
+  return ''
+}
+
+async function resolveBookingToyId(toy, options = {}) {
+  const preferredId = pickUuidFromToyObject(toy)
+  const forceLookup = Boolean(options.forceLookup)
+
+  if (preferredId && !forceLookup) {
+    return { toyId: preferredId, resolutionError: null }
+  }
+
+  const toyName = String(toy && toy.name ? toy.name : '').trim()
+  const toyCategory = String(toy && toy.category ? toy.category : '').trim()
+
+  if (!toyName) {
+    return { toyId: '', resolutionError: new Error('MISSING_TOY_NAME') }
+  }
+
+  let query = window.db
+    .from('toys')
+    .select('id,name,category,available,created_at')
+    .eq('name', toyName)
+    .order('available', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (toyCategory) {
+    query = query.eq('category', toyCategory)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    return { toyId: '', resolutionError: error }
+  }
+
+  const rows = Array.isArray(data) ? data : []
+  if (rows.length === 0) {
+    return { toyId: preferredId, resolutionError: preferredId ? null : new Error('TOY_MATCH_NOT_FOUND') }
+  }
+
+  const activeCandidate = rows.find((row) => row && row.available && isUuid(row.id))
+  if (activeCandidate) {
+    return { toyId: String(activeCandidate.id), resolutionError: null }
+  }
+
+  const anyCandidate = rows.find((row) => row && isUuid(row.id))
+  if (anyCandidate) {
+    return { toyId: String(anyCandidate.id), resolutionError: null }
+  }
+
+  return { toyId: preferredId, resolutionError: preferredId ? null : new Error('TOY_UUID_NOT_FOUND') }
+}
+
+function isToyForeignKeyError(error) {
+  if (!error) return false
+  const message = String(error.message || '').toLowerCase()
+  return message.includes('bookings_toy_id_fkey') || (message.includes('foreign key') && message.includes('toy_id'))
+}
+
+async function createBooking(userId, toyId, pickupDate) {
+  const payload = {
+    p_user_id: userId,
+    p_toy_id: toyId,
+    p_pickup_date: pickupDate
+  }
+
+  const v2Result = await window.db.rpc('create_booking_v2', payload)
+  if (!isMissingFunctionError(v2Result.error)) {
+    return v2Result
+  }
+
+  return window.db.rpc('create_booking', payload)
+}
+
+function getToyPublicId(toy) {
+  if (!toy || typeof toy !== 'object') return ''
+
+  const candidates = [toy.ID, toy.toy_public_id, toy.public_id]
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined) continue
+    const text = String(candidate).trim()
+    if (text) return text
+  }
+
+  return ''
+}
+
+function isMissingFunctionError(error) {
+  if (!error) return false
+  const message = String(error.message || '').toLowerCase()
+  return (
+    (message.includes('function') && message.includes('does not exist')) ||
+    (message.includes('could not find the function') && message.includes('schema cache'))
+  )
 }
