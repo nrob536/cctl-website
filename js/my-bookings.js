@@ -148,11 +148,7 @@ async function fetchBookings(userId) {
               title="${booking.renewal_count >= 2 ? 'Maximum renewals reached' : ''}">
               Renew
             </button>
-            <button class="btn-danger" onclick="returnToy('${booking.booking_id}')">
-              Return
-            </button>
           </div>
-        </div>
       `
     }).join('')
 
@@ -204,36 +200,6 @@ async function renewBooking(bookingId, currentRenewalCount) {
   } catch (err) {
     console.error('Error renewing booking:', err)
     alert('Error renewing booking. Please try again.')
-  }
-}
-
-async function returnToy(bookingId) {
-  const confirmed = confirm('Are you sure you want to return this toy?')
-  if (!confirmed) return
-
-  try {
-    let { error: returnError } = await window.db
-      .rpc('return_booking_v2', {
-        p_user_id: currentUserId,
-        p_booking_id: bookingId
-      })
-
-    if (isMissingFunctionError(returnError)) {
-      const fallbackResult = await window.db.rpc('return_booking', {
-        p_user_id: currentUserId,
-        p_booking_id: bookingId
-      })
-      returnError = fallbackResult.error
-    }
-
-    if (returnError) throw returnError
-
-    alert('Toy returned successfully!')
-    await fetchBookings(currentUserId)
-
-  } catch (err) {
-    console.error('Error returning toy:', err)
-    alert('Error returning toy. Please try again.')
   }
 }
 
