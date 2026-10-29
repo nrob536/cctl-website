@@ -16,30 +16,19 @@
     </nav>
   </header>
 
-  <div class="container" x-data="catalogue()" x-init="init()">
+  <div class="container" x-data="catalogue()">
     <h2>Browse Toys</h2>
 
     <div class="filters">
       <label for="category-filter">Category:</label>
-      <select id="category-filter" @change="onCategoryChange()" x-model="selectedCategory">
+      <select id="category-filter" @change="selectCategory($event.target.value)">
         <template x-for="category in categories" :key="category">
-          <option :value="category" x-text="category"></option>
+          <option :value="category" x-text="category" :selected="category === selectedCategory"></option>
         </template>
       </select>
 
-      <label for="display-size" class="filter-sub-label">Number of Toys to Show:</label>
-      <select
-        id="display-size"
-        x-model.number="displaySize"
-        @change="onDisplaySizeChange()"
-      >
-        <template x-for="size in displayOptions" :key="size">
-          <option :value="size" x-text="size"></option>
-        </template>
-      </select>
-
-      <p class="results-count" x-show="!loading">
-        Showing <strong x-text="loadedCount"></strong> toys in <strong x-text="selectedCategory"></strong>.
+      <p class="results-count" x-show="!loading && !error">
+        Showing <strong x-text="toys.length"></strong> toys in <strong x-text="selectedCategory"></strong>.
       </p>
     </div>
 
@@ -48,12 +37,16 @@
       <p>Loading toys...</p>
     </div>
 
-    <div class="toys-grid" x-show="!loading && filteredToys.length > 0">
-      <template x-for="toy in filteredToys" :key="toy.id">
+    <div class="message message-error" x-show="error">
+      <p x-text="error"></p>
+    </div>
+
+    <div class="toys-grid" x-show="!loading && toys.length > 0">
+      <template x-for="toy in toys" :key="toy.id">
         <div class="toy-card">
-          <img src="images/placeholder.png" alt="Toy image" :src="toy.image_url" :alt="toy.name" loading="lazy" onerror="this.src='images/placeholder.png'">
+          <img :src="toy.image_url || 'images/placeholder.png'" :alt="toy.name" loading="lazy" onerror="this.onerror=null; this.src='images/placeholder.png'">
           <div class="toy-card-content">
-            <h3 x-text="toy.name">Toy</h3>
+            <h3 x-text="toy.name"></h3>
             <div class="toy-card-meta">
               <strong>Age Range:</strong> <span x-text="toy.age_range"></span>
             </div>
@@ -71,7 +64,7 @@
       </template>
     </div>
 
-    <div x-show="!loading && filteredToys.length === 0" class="message message-info">
+    <div class="message message-info" x-show="!loading && !error && toys.length === 0">
       <p>No toys found in this category. Please try another.</p>
     </div>
   </div>

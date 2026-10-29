@@ -3,116 +3,102 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('catalogue', () => ({
     toys: [],
     categories: [],
-    loading: true,
     selectedCategory: '',
     defaultCategory: '',
-    displaySize: 25,
-    displayOptions: [25, 50, 100],
-    loadedCount: 0,
+    loading: true,
+    error: null,
+    cache: {},       // toys already loaded, keyed by category
+    requestId: 0,    // ignores out-of-date responses if the user clicks quickly
 
     async init() {
       document.getElementById('library-name').textContent = LIBRARY_NAME
-      await this.fetchCategories()
-      await this.fetchToys()
+
+      try {
+        await this.fetchCategories()
+      } catch (err) {
+        console.error('Error loading categories:', err)
+        this.error = 'Sorry, we could not load the toy categories. Please try again later.'
+        this.loading = false
+        return
+      }
+
+      await this.loadToys(this.selectedCategory)
     },
 
-    async onCategoryChange() {
-      await this.fetchToys()
-    },
-
-    async onDisplaySizeChange() {
-      await this.fetchToys()
+    // Called when the user picks a category in the dropdown
+    async selectCategory(category) {
+      this.selectedCategory = category
+      await this.loadToys(category)
     },
 
     async fetchCategories() {
+      let names = []
+      let defaultName = ''
+
       const { data, error } = await window.db.rpc('list_toy_categories')
 
-      if (error) {
-        const fallback = await this.fetchCategoriesFallback()
-        this.categories = fallback
-      } else {
-        const rows = Array.isArray(data) ? data : []
-        this.categories = rows
+      if (!error && Array.isArray(data) && data.length > 0) {
+        names = data
           .map((row) => String(row.category || '').trim())
           .filter(Boolean)
-
-        const defaultRow = rows.find((row) => row && row.is_default)
-        this.defaultCategory = defaultRow && defaultRow.category ? String(defaultRow.category) : (this.categories[0] || '')
+        const defaultRow = data.find((row) => row && row.is_default)
+        defaultName = defaultRow && defaultRow.category ? String(defaultRow.category).trim() : ''
+      } else {
+        // Fallback: read categories straight from the toys table
+        const result = await window.db.from('toys').select('category')
+        if (result.error) throw result.error
+        names = [...new Set((result.data || []).map((row) => this.normalizeCategory(row.category)))]
+          .sort((a, b) => a.localeCompare(b))
       }
 
-      if (!this.defaultCategory && this.categories.length > 0) {
-        this.defaultCategory = this.categories[0]
-      }
+      if (names.length === 0) throw new Error('No categories found')
 
-      if (!this.selectedCategory && this.defaultCategory) {
-        this.selectedCategory = this.defaultCategory
-      }
+      this.defaultCategory = names.includes(defaultName) ? defaultName : names[0]
+      // Set the selection first so the dropdown shows it when the options render
+      this.selectedCategory = this.defaultCategory
+      this.categories = names
     },
 
-    async fetchCategoriesFallback() {
-      const { data, error } = await window.db
-        .from('toys')
-        .select('category')
-        .order('category', { ascending: true })
-        .limit(400)
+    async loadToys(category) {
+      this.error = null
 
-      if (error) throw error
+      // Already loaded this category? Show it instantly, no backend request.
+      if (this.cache[category]) {
+        this.toys = this.cache[category]
+        this.loading = false
+        return
+      }
 
-      const unique = [...new Set((Array.isArray(data) ? data : []).map((row) => this.normalizeCategory(row && row.category)))]
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b))
+      const thisRequest = ++this.requestId
+      this.loading = true
 
-      this.defaultCategory = unique[0] || ''
-      return unique
-    },
-
-    async fetchToys() {
       try {
-        this.loading = true
-        const limit = Number(this.displaySize) || 25
+        let query = window.db
+          .from('toys')
+          .select('*')
+          .order('name', { ascending: true })
 
-        const { data, error } = await window.db.rpc('get_balanced_toys', {
-          p_limit: limit,
-          p_category: this.selectedCategory || null,
-          p_default_category: this.defaultCategory || null
-        })
-
-        if (error) {
-          // Graceful fallback while the RPC migration is being rolled out.
-          const fallbackRows = await this.fetchToysFallback(limit, this.selectedCategory || this.defaultCategory)
-          this.toys = fallbackRows
-          this.loadedCount = this.toys.length
-          return
+        if (category === 'Uncategorized') {
+          query = query.or('category.is.null,category.eq.')
+        } else {
+          query = query.eq('category', category)
         }
 
-        const rows = Array.isArray(data) ? data : []
-        this.toys = rows.map((toy) => this.normalizeToyRecord(toy))
-        this.loadedCount = this.toys.length
+        const { data, error } = await query
+        if (error) throw error
+        if (thisRequest !== this.requestId) return
+
+        const rows = (data || []).map((toy) => this.normalizeToyRecord(toy))
+        this.cache[category] = rows
+        this.toys = rows
       } catch (err) {
+        if (thisRequest !== this.requestId) return
         console.error('Error fetching toys:', err)
+        this.error = 'Sorry, we could not load the toys. Please try again later.'
         this.toys = []
-        this.loadedCount = 0
       } finally {
-        this.loading = false
+        if (thisRequest === this.requestId) this.loading = false
       }
-    },
-
-    async fetchToysFallback(limit, category) {
-      const fetchLimit = Math.min(600, Math.max(limit * 6, 150))
-
-      const { data, error } = await window.db
-        .from('toys')
-        .select('id,"ID",name,description,category,age_range,image_url,available,created_at')
-        .order('name', { ascending: true })
-        .limit(fetchLimit)
-
-      if (error) throw error
-
-      const selectedCategory = this.normalizeCategory(category)
-      const sourceRows = (Array.isArray(data) ? data : []).map((toy) => this.normalizeToyRecord(toy))
-      return sourceRows
-        .filter((toy) => this.normalizeCategory(toy.category) === selectedCategory)
-        .slice(0, limit)
     },
 
     normalizeToyRecord(toy) {
@@ -126,10 +112,6 @@ document.addEventListener('alpine:init', () => {
     normalizeCategory(category) {
       const text = String(category || '').trim()
       return text || 'Uncategorized'
-    },
-
-    get filteredToys() {
-      return this.toys
     }
   }))
 })
