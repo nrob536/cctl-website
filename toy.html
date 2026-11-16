@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Toy Details - Hamilton Community Toy Library</title>
+  <title>Toy Details - Carterton Community Toy Library</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header>
-    <h1 id="library-name">Hamilton Community Toy Library</h1>
+    <h1 id="library-name">Carterton Community Toy Library</h1>
     <nav>
       <a href="index.html">Home</a>
       <a href="catalogue.html">Catalogue</a>
-      <a href="my-bookings.html">My Bookings</a>
+      <a href="membership.html">Membership</a>
+      <a href="join.html">Join Us</a>
+      <a href="index.html#contact">Contact</a>
     </nav>
   </header>
 
@@ -27,7 +29,7 @@
     </div>
 
     <div id="toy-detail" class="toy-detail" style="display: none;">
-      <img id="toy-image" src="images/placeholder.png" alt="Toy image" class="toy-detail-image" onerror="this.src='images/placeholder.png'">
+      <img id="toy-image" src="images/placeholder.png" alt="Toy image" class="toy-detail-image" onerror="this.onerror=null; this.src='images/placeholder.png'">
 
       <div class="toy-detail-content">
         <h1 id="toy-name">Toy</h1>
@@ -55,26 +57,8 @@
           <p>This toy is currently unavailable. Please check back later or browse <a href="catalogue.html">other toys</a>.</p>
         </div>
 
-        <div id="booking-form-container" style="display: none;">
-          <div class="booking-form">
-            <h3>Book This Toy</h3>
-
-            <div id="form-message"></div>
-
-            <form id="booking-form">
-              <div class="form-group">
-                <label for="user-id">Your User ID (e.g. TL-4829)</label>
-                <input type="text" id="user-id" name="user-id" required placeholder="Enter your user ID">
-              </div>
-
-              <div class="form-group">
-                <label for="pickup-date">Pickup Date</label>
-                <input type="date" id="pickup-date" name="pickup-date" required>
-              </div>
-
-              <button type="submit" id="submit-btn">Book This Toy</button>
-            </form>
-          </div>
+        <div class="message message-info">
+          <p>Toys are borrowed in person at <a href="https://www.google.com/maps/search/?api=1&amp;query=210+High+Street+South,+Carterton" target="_blank" rel="noopener">210 High Street South, Carterton</a>. Not a member yet? <a href="join.html">Join us</a>.</p>
         </div>
 
         <div class="back-link-row">

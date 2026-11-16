@@ -1,5 +1,7 @@
 # Community Toy Library
 
+> **Current scope (static catalogue).** The website currently only displays the toy collection, membership information and how to join. Online booking, renewals and returns are switched off: toy issuing and returns are managed in person by the Toy Librarian. `my-bookings.html` and its script have been removed, and `migrations/003_disable_online_booking.sql` revokes public access to the booking functions. The booking sections below describe the earlier design and are kept for the future online catalogue.
+
 A community-run toy lending library web application. Members can browse a toy catalogue and make bookings using only a user ID. Library staff manage everything through Supabase's built-in table editor. The system sends automated overdue reminder emails daily.
 
 The frontend is plain HTML, CSS, and JavaScript — no framework, no build step, no tooling required. Anyone comfortable editing a web page can contribute.
